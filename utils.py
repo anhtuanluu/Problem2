@@ -7,6 +7,7 @@ import torch
 import re
 import string
 from tqdm import tqdm
+from collections import OrderedDict
 tqdm.pandas()
 
 def seed_everything(SEED):
@@ -43,3 +44,10 @@ def text_cleaner(review):
     review = review.strip()
     # review = review.lower()
     return review
+
+def load_state_dict(model, checkpoint):
+    new_state_dict = OrderedDict()
+    for k, v in checkpoint.items():
+        name = k.replace("module.", "")
+        new_state_dict[name] = v
+    model.load_state_dict(new_state_dict)

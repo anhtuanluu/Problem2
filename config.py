@@ -9,7 +9,7 @@ def args():
     parser.add_argument('--pretrained_model_path', type=str, default='vinai/phobert-base')
     parser.add_argument('--rdrsegmenter_path', type=str,  default='E:\\OneDrive\\Hackathon\\Problem2\\vncorenlp')
     parser.add_argument('--max_sequence_length', type=int, default=256)
-    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--batch_size', type=int, default=6)
     parser.add_argument('--accumulation_steps', type=int, default=5)
     parser.add_argument('--epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=3e-5)
