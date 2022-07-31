@@ -18,8 +18,9 @@ import torch.nn.functional as F
 from utils import *
 import argparse
 from config import args
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 seed_everything(69)
-args =  args()
+args = args()
 
 config = RobertaConfig.from_pretrained(
             args.pretrained_model_path,
@@ -97,12 +98,8 @@ for epoch in tq:
     pbar = tqdm(enumerate(train_loader), total=len(train_loader), leave=False)
     for i,(x_batch, y_batch) in pbar:
         mymodel.train()
-        if torch.cuda.is_available():
-            y_pred = mymodel(x_batch.cuda(), attention_mask=(x_batch > 0).cuda())
-            loss =  F.binary_cross_entropy_with_logits(y_pred.view(-1).cuda(),y_batch.float().cuda())
-        else:
-            y_pred = mymodel(x_batch, attention_mask=(x_batch > 0))
-            loss =  F.binary_cross_entropy_with_logits(y_pred.view(-1), y_batch.float())
+        y_pred = mymodel(x_batch.to(device), attention_mask=(x_batch > 0).to(device))
+        loss =  F.binary_cross_entropy_with_logits(y_pred.view(-1).to(device),y_batch.float().to(device))
         loss = loss.mean()
         loss.backward()
         if i % args.accumulation_steps == 0 or i == len(pbar) - 1:
@@ -119,12 +116,8 @@ for epoch in tq:
     mymodel.eval()
     pbar = tqdm(enumerate(valid_loader),total=len(valid_loader),leave=False)
     for i,(x_batch, y_batch) in pbar:
-        if torch.cuda.is_available():
-            y_pred = mymodel(x_batch.cuda(), attention_mask=(x_batch > 0).cuda())
-            y_pred = y_pred.squeeze().detach().cpu().numpy()
-        else:
-            y_pred = mymodel(x_batch, attention_mask=(x_batch > 0))
-            y_pred = y_pred.squeeze().detach().cpu().numpy()
+        y_pred = mymodel(x_batch.to(device), attention_mask=(x_batch > 0).to(device))
+        y_pred = y_pred.squeeze().detach().cpu().numpy()
         val_preds = np.atleast_1d(y_pred) if val_preds is None else np.concatenate([val_preds, np.atleast_1d(y_pred)])
     val_preds = sigmoid(val_preds)
 
