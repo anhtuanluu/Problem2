@@ -10,7 +10,7 @@ class BertForQNHackathon(RobertaPreTrainedModel):
         super(BertForQNHackathon, self).__init__(config)
         self.num_labels = config.num_labels
         self.phobert = RobertaModel.from_pretrained("vinai/phobert-base", config=config)
-        self.qa_outputs = nn.Linear(3 * config.hidden_size, self.num_labels)
+        self.qa_outputs = nn.Linear(4 * config.hidden_size, self.num_labels)
         self.init_weights()
 
     def forward(self, input_ids, attention_mask=None, token_type_ids=None, position_ids=None, head_mask=None):
@@ -21,7 +21,8 @@ class BertForQNHackathon(RobertaPreTrainedModel):
         outputs = outputs.hidden_states
         cls_output = torch.cat((outputs[-1][:,0, ...],
                                 outputs[-2][:,0, ...], 
-                                outputs[-3][:,0, ...]), 
+                                outputs[-3][:,0, ...],
+                                outputs[-4][:,0, ...]), 
                                 -1)
         logits = self.qa_outputs(cls_output)
         return logits
@@ -35,4 +36,3 @@ class BertForQNHackathon(RobertaPreTrainedModel):
 #     mymodel = BertForQNHackathon.from_pretrained("vinai/phobert-base", config=config)
 #     input_ids = torch.ones((1,5), dtype=torch.int64)
 #     outputs = mymodel(input_ids)
-#     print(outputs)

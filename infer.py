@@ -4,18 +4,13 @@ tqdm.pandas()
 from torch import nn
 import numpy as np
 import os
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score, confusion_matrix
 from transformers import *
 import torch
-import matplotlib.pyplot as plt
 import torch.utils.data
-import torch.nn.functional as F
 from utils import *
 from config import args
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-seed_everything(69)
 args = args()
 
 config = RobertaConfig.from_pretrained(
@@ -48,7 +43,6 @@ for i,(x_batch, y_batch) in pbar:
     y_pred = mymodel(x_batch.to(device), attention_mask=(x_batch > 0).to(device))
     y_pred = y_pred.squeeze().detach().cpu().numpy()
     val_preds = np.atleast_1d(y_pred) if val_preds is None else np.concatenate([val_preds, np.atleast_1d(y_pred)])
-    print(val_preds)
 val_preds = sigmoid(val_preds)
 
 print(y_test)
