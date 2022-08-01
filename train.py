@@ -21,23 +21,20 @@ config = RobertaConfig.from_pretrained(
             output_hidden_states=True,
             num_labels=1
             )
-mymodel = BertForQNHackathon.from_pretrained(args.pretrained_model_path, config=config)
+mymodel = BertForQNHackathon(config=config)
+mymodel.to(device)
 
-if torch.cuda.is_available():
-    mymodel.cuda()
-    if torch.cuda.device_count():
-        print(f"Training using {torch.cuda.device_count()} gpus")
-        mymodel = nn.DataParallel(mymodel)
-        tsfm = mymodel.module.phobert
-    else:
-        tsfm = mymodel.phobert
+if torch.cuda.device_count():
+    print(f"Training using {torch.cuda.device_count()} gpus")
+    mymodel = nn.DataParallel(mymodel)
+    tsfm = mymodel.module.phobert
 else:
     tsfm = mymodel.phobert
 
 data_npy = np.load(args.data_npy)
 target_npy = np.load(args.target_npy)
-# x_train, y_train, x_test, y_test = data_npy[:20], target_npy[:20], data_npy[:5], target_npy[:5]
-x_train, x_test, y_train, y_test = data_npy[:2965], target_npy[:2965], data_npy[2965:], target_npy[2965:]
+x_train, y_train, x_test, y_test = data_npy[:20], target_npy[:20], data_npy[:10], target_npy[:10]
+# x_train, y_train, x_test, y_test = data_npy[:2965], target_npy[:2965], data_npy[2965:], target_npy[2965:]
 
 # train for a0
 y_train = y_train[:, 0]
@@ -113,7 +110,10 @@ for epoch in tq:
         y_pred = mymodel(x_batch.to(device), attention_mask=(x_batch > 0).to(device))
         y_pred = y_pred.squeeze().detach().cpu().numpy()
         val_preds = np.atleast_1d(y_pred) if val_preds is None else np.concatenate([val_preds, np.atleast_1d(y_pred)])
+    # print(val_preds)
     val_preds = sigmoid(val_preds)
+    # print(val_preds > 0.5)
+    # print(y_test)
     best_th = 0
     score = f1_score(y_test, val_preds > 0.5)
     print(f"\nAUC = {roc_auc_score(y_test, val_preds):.4f}, F1 score = {score:.4f}")

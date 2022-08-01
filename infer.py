@@ -4,7 +4,7 @@ tqdm.pandas()
 from torch import nn
 import numpy as np
 import os
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score,roc_curve, roc_auc_score, confusion_matrix
 from transformers import *
 import torch
 import torch.utils.data
@@ -19,7 +19,7 @@ config = RobertaConfig.from_pretrained(
             num_labels=1
             )
 
-mymodel = BertForQNHackathon.from_pretrained(args.pretrained_model_path, config=config)
+mymodel = BertForQNHackathon(config=config)
 checkpoint = torch.load(os.path.join(args.checkpoint, f"model.bin"), map_location=device)
 load_state_dict(mymodel, checkpoint)
 
@@ -44,6 +44,9 @@ for i,(x_batch, y_batch) in pbar:
     y_pred = y_pred.squeeze().detach().cpu().numpy()
     val_preds = np.atleast_1d(y_pred) if val_preds is None else np.concatenate([val_preds, np.atleast_1d(y_pred)])
 val_preds = sigmoid(val_preds)
-
-print(y_test)
 print(val_preds)
+fpr, tpr, thresholds = roc_curve(y_test, val_preds, pos_label = 1)
+for i in thresholds:
+    print(f1_score(y_test, val_preds > i))
+
+print(f1_score(y_test, val_preds > 0.5))
