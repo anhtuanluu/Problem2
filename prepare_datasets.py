@@ -32,8 +32,8 @@ x_train = x_train.progress_apply(lambda x: ' '.join(rdrsegmenter.word_segment(x)
 x_test = x_test.progress_apply(lambda x: ' '.join(rdrsegmenter.word_segment(x)))
 
 print('Tokenizing:')
-x_train = convert_to_feature(x_train, tokenizer, args.max_sequence_length)
-x_test = convert_to_feature(x_test, tokenizer, args.max_sequence_length)
+x_train = convert_to_feature(x_train, tokenizer, args.max_sequence_length, args.head)
+x_test = convert_to_feature(x_test, tokenizer, args.max_sequence_length, args.head)
 
 y_train = y_train.to_numpy()
 y_test = y_test.to_numpy()

@@ -10,7 +10,7 @@ class BertForQNHackathon(nn.Module):
         super(BertForQNHackathon, self).__init__()
         self.num_labels = config.num_labels
         self.phobert = AutoModel.from_pretrained("vinai/phobert-base", config=config)
-        self.qa_outputs = nn.Linear(2 * config.hidden_size, self.num_labels)
+        self.qa_outputs = nn.Linear(5 * config.hidden_size, self.num_labels)
         # self.init_weights()
 
     def forward(self, input_ids, attention_mask=None, position_ids=None, head_mask=None):
@@ -21,7 +21,10 @@ class BertForQNHackathon(nn.Module):
         outputs = outputs.hidden_states
         # cls_output = outputs.last_hidden_state[:,0, ...]
         cls_output = torch.cat((outputs[-1][:,0, ...],
-                                outputs[-2][:,0, ...]), 
+                                outputs[-2][:,0, ...],
+                                outputs[-3][:,0, ...],
+                                outputs[-4][:,0, ...],
+                                outputs[-5][:,0, ...]), 
                                 -1)
         logits = self.qa_outputs(cls_output)
         return logits

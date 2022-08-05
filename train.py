@@ -23,6 +23,8 @@ config = RobertaConfig.from_pretrained(
             )
 mymodel = BertForQNHackathon(config=config)
 mymodel.to(device)
+# mymodel = AutoModelForSequenceClassification.from_pretrained(args.pretrained_model_path, num_labels=2)
+# mymodel.to(device)
 
 if torch.cuda.device_count():
     print(f"Training using {torch.cuda.device_count()} gpus")
@@ -33,12 +35,19 @@ else:
 
 data_npy = np.load(args.data_npy)
 target_npy = np.load(args.target_npy)
-x_train, y_train, x_test, y_test = data_npy[:20], target_npy[:20], data_npy[:10], target_npy[:10]
-# x_train, y_train, x_test, y_test = data_npy[:2965], target_npy[:2965], data_npy[2965:], target_npy[2965:]
+
+# x_train, y_train, x_test, y_test = data_npy[:20], target_npy[:20], data_npy[:10], target_npy[:10]
+x_train, y_train, x_test, y_test = data_npy[:2965], target_npy[:2965], data_npy[2965:], target_npy[2965:]
 
 # train for a0
-y_train = y_train[:, 0]
-y_test = y_test[:, 0]
+# target_npy =  target_npy[:, 0]
+
+y_train = y_train[:, 2]
+y_test = y_test[:, 2]
+# splits = list(StratifiedKFold(n_splits=5, shuffle=True, random_state=123).split(data_npy, target_npy))
+# for (train_idx, test_idx) in splits:
+#     x_train, y_train, x_test, y_test = data_npy[train_idx], target_npy[train_idx], data_npy[test_idx], target_npy[test_idx]
+#     break
 
 param_optimizer = list(mymodel.named_parameters())
 no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -110,10 +119,7 @@ for epoch in tq:
         y_pred = mymodel(x_batch.to(device), attention_mask=(x_batch > 0).to(device))
         y_pred = y_pred.squeeze().detach().cpu().numpy()
         val_preds = np.atleast_1d(y_pred) if val_preds is None else np.concatenate([val_preds, np.atleast_1d(y_pred)])
-    # print(val_preds)
     val_preds = sigmoid(val_preds)
-    # print(val_preds > 0.5)
-    # print(y_test)
     best_th = 0
     score = f1_score(y_test, val_preds > 0.5)
     print(f"\nAUC = {roc_auc_score(y_test, val_preds):.4f}, F1 score = {score:.4f}")

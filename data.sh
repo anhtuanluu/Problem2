@@ -1,0 +1,1 @@
+python prepare_datasets.py --train_path 'E:/Git/Problem2/data/train_preprocess.csv' --test_path 'E:/Git/Problem2/data/test_preprocess.csv' --data_npy 'E:/Git/Problem2/data/data_process.npy' --target_npy 'E:/Git/Problem2/data/target_process.npy' --head

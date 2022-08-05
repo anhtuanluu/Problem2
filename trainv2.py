@@ -22,24 +22,26 @@ config = RobertaConfig.from_pretrained(
             output_hidden_states=True,
             num_labels=2
             )
-model = BertForQNHackathon(config=config)
+# model = BertForQNHackathon(config=config)
+# model.to(device)
+model = AutoModelForSequenceClassification.from_pretrained(args.pretrained_model_path, num_labels=2)
 model.to(device)
 
-if torch.cuda.device_count():
-    print(f"Training using {torch.cuda.device_count()} gpus")
-    model = nn.DataParallel(model)
-    tsfm = model.module.phobert
-else:
-    tsfm = model.phobert
 
 data_npy = np.load(args.data_npy)
 target_npy = np.load(args.target_npy)
 # x_train, y_train, x_test, y_test = data_npy[:20], target_npy[:20], data_npy[:10], target_npy[:10]
-x_train, y_train, x_test, y_test = data_npy[:2965], target_npy[:2965], data_npy[2965:], target_npy[2965:]
+# x_train, y_train, x_test, y_test = data_npy[:2965], target_npy[:2965], data_npy[2965:], target_npy[2965:]
 
 # train for a0
-y_train = y_train[:, 0]
-y_test = y_test[:, 0]
+# y_train = y_train[:, 0]
+# y_test = y_test[:, 0]
+target_npy =  target_npy[:, 0]
+
+splits = list(StratifiedKFold(n_splits=5, shuffle=True, random_state=123).split(data_npy, target_npy))
+for (train_idx, test_idx) in splits:
+    x_train, y_train, x_test, y_test = data_npy[train_idx], target_npy[train_idx], data_npy[test_idx], target_npy[test_idx]
+    break
 
 criterion = nn.CrossEntropyLoss()
 param_optimizer = list(model.named_parameters())
@@ -53,7 +55,7 @@ valid_dataset = TensorDataset(torch.tensor(x_test, dtype=torch.long), torch.tens
 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 valid_loader = DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
 
-EPOCHS = 50
+EPOCHS = 10
 
 train_loss = []
 train_acc = []
@@ -78,7 +80,7 @@ for epoch in range(EPOCHS):
         optimizer.zero_grad()
         prediction = model(pair_token_ids, 
                                 # token_type_ids=seg_ids, 
-                                attention_mask=(pair_token_ids > 0)
+                                attention_mask=(pair_token_ids > 1)
                                 )
         loss = criterion(prediction,labels)
         y_pred = torch.log_softmax(prediction, dim=1).argmax(dim=1).cpu().tolist()
