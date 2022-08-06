@@ -106,7 +106,6 @@ for epoch in tq:
         loss.backward()
         y_pred = y_pred.squeeze().detach().cpu().numpy()
         train_preds = np.atleast_1d(y_pred) if train_preds is None else np.concatenate([train_preds, np.atleast_1d(y_pred)])
-        train_preds = sigmoid(train_preds)
         if i % args.accumulation_steps == 0 or i == len(pbar) - 1:
             optimizer.step()
             optimizer.zero_grad()
@@ -126,6 +125,7 @@ for epoch in tq:
         y_pred = y_pred.squeeze().detach().cpu().numpy()
         val_preds = np.atleast_1d(y_pred) if val_preds is None else np.concatenate([val_preds, np.atleast_1d(y_pred)])
     val_preds = sigmoid(val_preds)
+    train_preds = sigmoid(train_preds)
     best_th = 0
     score = f1_score(y_test, val_preds > 0.5)
     score_train = f1_score(y_train, train_preds > 0.5)
