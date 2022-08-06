@@ -21,7 +21,7 @@ config = RobertaConfig.from_pretrained(
             output_hidden_states=True,
             num_labels=1
             )
-mymodel = BertForQNHackathon(config=config)
+mymodel = BertForQNHackathon.from_pretrained(args.pretrained_model_path, config=config)
 mymodel.to(device)
 # mymodel = AutoModelForSequenceClassification.from_pretrained(args.pretrained_model_path, num_labels=2)
 # mymodel.to(device)
@@ -42,8 +42,11 @@ x_train, y_train, x_test, y_test = data_npy[:2965], target_npy[:2965], data_npy[
 # train for a0
 # target_npy =  target_npy[:, 0]
 
-y_train = y_train[:, 2]
-y_test = y_test[:, 2]
+y_train = y_train[:, 0]
+y_test = y_test[:, 0]
+
+# train for a0
+# target_npy =  target_npy[:, 0]
 # splits = list(StratifiedKFold(n_splits=5, shuffle=True, random_state=123).split(data_npy, target_npy))
 # for (train_idx, test_idx) in splits:
 #     x_train, y_train, x_test, y_test = data_npy[train_idx], target_npy[train_idx], data_npy[test_idx], target_npy[test_idx]
@@ -82,10 +85,10 @@ for epoch in tq:
                 param.requires_grad = True
         frozen = False
         del scheduler0
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
     val_preds = None
+    train_preds = None
     best_score = 0
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
@@ -101,6 +104,9 @@ for epoch in tq:
         loss =  F.binary_cross_entropy_with_logits(y_pred.view(-1).to(device), y_batch.float().to(device))
         loss = loss.mean()
         loss.backward()
+        y_pred = y_pred.squeeze().detach().cpu().numpy()
+        train_preds = np.atleast_1d(y_pred) if train_preds is None else np.concatenate([train_preds, np.atleast_1d(y_pred)])
+        train_preds = sigmoid(train_preds)
         if i % args.accumulation_steps == 0 or i == len(pbar) - 1:
             optimizer.step()
             optimizer.zero_grad()
@@ -122,7 +128,8 @@ for epoch in tq:
     val_preds = sigmoid(val_preds)
     best_th = 0
     score = f1_score(y_test, val_preds > 0.5)
-    print(f"\nAUC = {roc_auc_score(y_test, val_preds):.4f}, F1 score = {score:.4f}")
+    score_train = f1_score(y_train, train_preds > 0.5)
+    print(f"\nAUC = {roc_auc_score(y_test, val_preds):.4f}, F1 score train = {score_train:.4f}, F1 score = {score:.4f}")
     if score >= best_score:
         torch.save(mymodel.state_dict(),os.path.join(args.checkpoint, f"model.bin"))
         best_score = score
