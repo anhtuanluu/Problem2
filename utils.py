@@ -299,7 +299,7 @@ def convert_to_feature(series, tokenizer, max_sequence_length, head = False):
     
 def text_cleaner(review):
     review = review.replace('\n', ' ')
-    review = review.replace('-', ' ')
+    # review = review.replace('-', ' ')
     review = review.replace('pig c', 'Big C')
     review = review.replace('vsinh', 'vệ sinh')
     review = review.replace('sđt', 'số điện thoại')
@@ -313,7 +313,7 @@ def text_cleaner(review):
     review = review.replace('0, 000', '0,000')
     review = review.replace('HN', 'Hà Nội')
     review = review.replace('Dzô', 'vô')
-    review = review.replace('ni', 'này')
+    # review = review.replace('ni', 'này')
     review = review.replace('19 k', '19k')
     review = review.replace('cf', 'coffee')
     review = review.replace('coffe', 'coffee')
@@ -325,7 +325,7 @@ def text_cleaner(review):
     review = review.replace('zễ', 'dễ')
     review = remove_emoji(review)
     review = remove_emoticons(review)
-    review = '<s> '+ review +' </s>'
+    # review = '<s> '+ review +' </s>'
     review = review.lower()
     # review = review.replace('.', '')
     # review = re.sub(r'[^\w\s]', '', review)
@@ -339,3 +339,8 @@ def load_state_dict(model, checkpoint):
         name = k.replace("module.", "")
         new_state_dict[name] = v
     model.load_state_dict(new_state_dict)
+
+def flat_accuracy(preds, labels):
+    pred_flat = np.argmax(preds, axis=1).flatten()
+    labels_flat = labels.flatten()
+    return np.sum(pred_flat == labels_flat) / len(labels_flat)
