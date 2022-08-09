@@ -71,8 +71,8 @@ class MultiClass(nn.Module):
         loss = self.criterion(output, labels)
     return loss, output
 
-# mymodel = MultiClass()
-mymodel = BertForQNHackathon(config=config)
+mymodel = MultiClass()
+# mymodel = BertForQNHackathon(config=config)
 mymodel.to(device)
 
 data_npy = np.load(args.data_npy)

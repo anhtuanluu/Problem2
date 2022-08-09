@@ -323,6 +323,7 @@ def text_cleaner(review):
     review = review.replace('reccomend', 'recommend')
     review = review.replace('qá', 'quá')
     review = review.replace('zễ', 'dễ')
+    # review = review.replace('tưoi', 'tươi')
     review = remove_emoji(review)
     review = remove_emoticons(review)
     # review = '<s> '+ review +' </s>'
