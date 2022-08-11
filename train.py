@@ -21,7 +21,7 @@ config = RobertaConfig.from_pretrained(
             output_hidden_states=True,
             num_labels=1
             )
-mymodel = BertForQNHackathon.from_pretrained(args.pretrained_model_path, config=config)
+mymodel = BertForQNHackathon1.from_pretrained(args.pretrained_model_path, config=config)
 mymodel.to(device)
 # mymodel = AutoModelForSequenceClassification.from_pretrained(args.pretrained_model_path, num_labels=2)
 # mymodel.to(device)
@@ -37,7 +37,7 @@ data_npy = np.load(args.data_npy)
 target_npy = np.load(args.target_npy)
 
 # train for a0
-target_npy =  target_npy[:, 0]
+target_npy = np.where(target_npy[:, 0] > 0, 1, 0)
 splits = list(StratifiedKFold(n_splits=5, shuffle=True, random_state=123).split(data_npy, target_npy))
 
 param_optimizer = list(mymodel.named_parameters())
@@ -71,6 +71,10 @@ for fold, (train_idx, val_idx) in enumerate(splits):
         continue
     train_dataset = torch.utils.data.TensorDataset(torch.tensor(data_npy[train_idx],dtype=torch.long), torch.tensor(target_npy[train_idx],dtype=torch.long))
     valid_dataset = torch.utils.data.TensorDataset(torch.tensor(data_npy[val_idx],dtype=torch.long), torch.tensor(target_npy[val_idx],dtype=torch.long))
+    num_train_optimization_steps = int(args.epochs*len(train_dataset))
+    optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, correct_bias=False)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=100, num_training_steps=num_train_optimization_steps)
+    scheduler0 = get_constant_schedule(optimizer)
     tq = tqdm(range(args.epochs + 1))
     for child in tsfm.children():
         for param in child.parameters():
@@ -103,13 +107,12 @@ for fold, (train_idx, val_idx) in enumerate(splits):
             loss =  F.binary_cross_entropy_with_logits(y_pred.view(-1).cuda(),y_batch.float().cuda())
             loss = loss.mean()
             loss.backward()
-            if i % args.accumulation_steps == 0 or i == len(pbar) - 1:
-                optimizer.step()
-                optimizer.zero_grad()
-                if not frozen:
-                    scheduler.step()
-                else:
-                    scheduler0.step()
+            optimizer.step()
+            optimizer.zero_grad()
+            if not frozen:
+                scheduler.step()
+            else:
+                scheduler0.step()
             lossf = loss.item()
             pbar.set_postfix(loss = lossf)
             avg_loss += loss.item() / len(train_loader)
