@@ -41,9 +41,19 @@ for text in x_train.values:
 print(len(cnt))
 FREQWORDS = set(["nên", "và", "có", "mình", "rất", "là", "thì", "cho", "cũng", "với"])
 RAREWORDS = set([w for (w, wc) in cnt.most_common() if wc < 2])
+hai = set([w for (w, wc) in cnt.most_common() if wc < 3])
+ba = set([w for (w, wc) in cnt.most_common() if wc < 4])
+bon = set([w for (w, wc) in cnt.most_common() if wc < 5])
+nam = set([w for (w, wc) in cnt.most_common() if wc < 6])
+
 # RAREWORDS = set([word for word in cnt if list(cnt).count(word) < 2])
 print(RAREWORDS)
+print(len(cnt))
+print(len(RAREWORDS))
+print(len(hai), len(ba), len(bon), len(nam))
 x_train = x_train.progress_apply(lambda x : remove_freqwords(x, FREQWORDS))
+x_train.to_csv("C:/Users/kccshop.vn/Documents/Git/Problem2/data/output_not.csv")
+
 x_train = x_train.progress_apply(lambda x : remove_rarewords(x, RAREWORDS))
 
 x_train.to_csv("C:/Users/kccshop.vn/Documents/Git/Problem2/data/output.csv")
