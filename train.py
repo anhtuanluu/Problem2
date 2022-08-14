@@ -48,10 +48,10 @@ optimizer_grouped_parameters = [
     {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
 ]
 
-num_train_optimization_steps = int(args.epochs*len(data_npy) / args.batch_size / args.accumulation_steps)
-optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, correct_bias=False)
-scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=100, num_training_steps=num_train_optimization_steps)
-scheduler0 = get_constant_schedule(optimizer)
+# num_train_optimization_steps = int(args.epochs*len(data_npy) / args.batch_size / args.accumulation_steps)
+# optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, correct_bias=False)
+# scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=100, num_training_steps=num_train_optimization_steps)
+# scheduler0 = get_constant_schedule(optimizer)
 
 if not os.path.exists(args.checkpoint):
     os.mkdir(args.checkpoint)
@@ -72,8 +72,8 @@ for fold, (train_idx, val_idx) in enumerate(splits):
     train_dataset = torch.utils.data.TensorDataset(torch.tensor(data_npy[train_idx],dtype=torch.long), torch.tensor(target_npy[train_idx],dtype=torch.long))
     valid_dataset = torch.utils.data.TensorDataset(torch.tensor(data_npy[val_idx],dtype=torch.long), torch.tensor(target_npy[val_idx],dtype=torch.long))
     num_train_optimization_steps = int(args.epochs*len(train_dataset))
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, correct_bias=False)
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=100, num_training_steps=num_train_optimization_steps)
+    optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_train_optimization_steps)
     scheduler0 = get_constant_schedule(optimizer)
     tq = tqdm(range(args.epochs + 1))
     for child in tsfm.children():

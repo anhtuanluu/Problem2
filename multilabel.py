@@ -77,12 +77,13 @@ mymodel.to(device)
 
 data_npy = np.load(args.data_npy)
 target_npy = np.load(args.target_npy)
+target_npy = np.where(target_npy > 0, 1, 0)
 
 # target_npy =  target_npy[:, 1]
 
-num_train_optimization_steps = int(args.epochs*len(data_npy) / args.batch_size / args.accumulation_steps)
-optimizer = AdamW(mymodel.parameters(), lr=args.lr, correct_bias=False)
-scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_train_optimization_steps)
+# num_train_optimization_steps = int(args.epochs*len(data_npy) / args.batch_size / args.accumulation_steps)
+# optimizer = AdamW(mymodel.parameters(), lr=args.lr, correct_bias=False)
+# scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_train_optimization_steps)
 
 if not os.path.exists(args.checkpoint):
     os.mkdir(args.checkpoint)
@@ -98,6 +99,9 @@ for fold, i in enumerate(splits):
     train_dataset = torch.utils.data.TensorDataset(torch.tensor(data_npy[:2953],dtype=torch.long), torch.tensor(target_npy[:2953],dtype=torch.float))
     valid_dataset = torch.utils.data.TensorDataset(torch.tensor(data_npy[2953:],dtype=torch.long), torch.tensor(target_npy[2953:],dtype=torch.float))
     tq = tqdm(range(args.epochs + 1))
+    num_train_optimization_steps = int(args.epochs*len(train_dataset))
+    optimizer = AdamW(mymodel.parameters(), lr=args.lr)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_train_optimization_steps)
     attribute_list = ['a0', 'a1', 'a2', 'a3', 'a4', 'a5']
 
     for epoch in tq:
