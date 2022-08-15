@@ -296,7 +296,10 @@ def convert_to_feature(series, tokenizer, max_sequence_length, head = False):
     else:
         outputs = add_head_padding(series, tokenizer, max_sequence_length)
     return outputs
-    
+
+def remove_long_word(text):
+    return re.sub(r'([A-Z])\1+', lambda m: m.group(1).lower(), text, flags=re.IGNORECASE)
+
 def text_cleaner(review):
     review = review.replace('\n', ' ')
     review = review.replace('.', '. ')
@@ -392,15 +395,13 @@ def text_cleaner(review):
     review = review.replace(' cacs ', ' các ')
     review = remove_emoji(review)
     review = remove_emoticons(review)
+    review = remove_long_word(review)
     # review = '<s> '+ review +' </s>'
     # review = review.lower()
-    # review = review.replace('.', '')
     # review = re.sub(r'[^\w\s]', '', review)
     review = re.sub("\s\s+" , " ", review)
     review = re.sub("(\D) k " , "\\1 không ", review)
-    # review = re.sub("(\D) k." , "\\1 không ", review)
     review = re.sub("([0-9]) k " , "\\1 nghìn ", review)
-    # review = re.sub("([0-9]) k." , "\\1 nghìn ", review)
     review = re.sub("([0-9]) đ " , "\\1 nghìn ", review)
     review = re.sub("([0-9])k " , "\\1 nghìn ", review)
     review = review.strip()
@@ -423,4 +424,3 @@ def remove_freqwords(text, FREQWORDS):
 
 def remove_rarewords(text, RAREWORDS):
     return " ".join([word for word in str(text).split() if word not in RAREWORDS])
-

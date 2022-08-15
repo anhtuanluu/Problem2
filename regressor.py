@@ -52,7 +52,6 @@ if not os.path.exists(args.checkpoint):
 
 tq = tqdm(range(args.epochs + 1))
 splits = list(StratifiedKFold(n_splits=5, shuffle=True, random_state=123).split(data_npy, y_new))
-# splits=[0,1,2,3]
 for fold, (train_dx, test_dx) in enumerate(splits):
     print("Training for fold {}".format(fold))
     best_score = 99999
@@ -63,7 +62,7 @@ for fold, (train_dx, test_dx) in enumerate(splits):
     tq = tqdm(range(args.epochs + 1))
     num_train_optimization_steps = int(args.epochs * len(train_dataset))
     optimizer = AdamW(mymodel.parameters(), lr=args.lr, eps = 1e-8)
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_train_optimization_steps)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=50, num_training_steps=num_train_optimization_steps)
     for epoch in tq:
 
         val_preds = None
@@ -103,5 +102,5 @@ for fold, (train_dx, test_dx) in enumerate(splits):
             pbar.set_postfix(loss = lossf)
         print(f"\nTrain Loss = {avg_loss:.4f}, Valid Loss = {avg_eval_loss:.4f}")
         if avg_eval_loss <= best_score:
-            torch.save(mymodel.state_dict(), "model_.bin")
+            torch.save(mymodel.state_dict(), f"model_{fold}.bin")
             best_score = avg_eval_loss

@@ -11,7 +11,7 @@ def args():
     parser.add_argument('--max_sequence_length', type=int, default=256)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--accumulation_steps', type=int, default=5)
-    parser.add_argument('--epochs', type=int, default=25)
+    parser.add_argument('--epochs', type=int, default=12)
     parser.add_argument('--lr', type=float, default=2e-5)
     parser.add_argument('--checkpoint', type=str, default='models')
     parser.add_argument('--head', action='store_true')
