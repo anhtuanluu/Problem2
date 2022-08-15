@@ -100,7 +100,7 @@ for fold, (train_dx, test_dx) in enumerate(splits):
             lossf = loss.item()
             avg_eval_loss += lossf / len(valid_loader)
             pbar.set_postfix(loss = lossf)
-        print(f"\nTrain Loss = {avg_loss:.4f}, Valid Loss = {avg_eval_loss:.4f}")
+        print(f"\nTrain Loss = {avg_loss:.4f}, Valid Loss = {avg_eval_loss:.4f}, Best = {best_score:.4f}")
         if avg_eval_loss <= best_score:
             torch.save(mymodel.state_dict(), f"model_{fold}.bin")
             best_score = avg_eval_loss
