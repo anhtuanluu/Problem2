@@ -97,6 +97,6 @@ for fold, (train_dx, test_dx) in enumerate(splits):
             torch.save(mymodel.state_dict(), f"model_{fold}.bin")
             best_score = avg_eval_loss
         print(f"\nTrain Loss = {avg_loss:.4f}, Valid Loss = {avg_eval_loss:.4f}, Best = {best_score:.4f}")
-        print(f"R2 Score = {r2_score(target_npy[test_dx], val_preds):.4f}")
+        print(f"R2 Score = {r2_score(val_preds, target_npy[test_dx]):.4f}")
         print(f"MAE = {mean_absolute_error(target_npy[test_dx], val_preds):.4f}")
         print(f"MSE = {mean_squared_error(target_npy[test_dx], val_preds):.4f}")
