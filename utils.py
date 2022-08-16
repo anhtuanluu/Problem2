@@ -7,6 +7,7 @@ import torch
 import re
 import string
 from collections import OrderedDict
+from sklearn.preprocessing import LabelEncoder
 
 EMOTICONS = {
     u":‑\)":"Happy face or smiley",
@@ -424,3 +425,18 @@ def remove_freqwords(text, FREQWORDS):
 
 def remove_rarewords(text, RAREWORDS):
     return " ".join([word for word in str(text).split() if word not in RAREWORDS])
+
+def remove_space_between_numbers(text):
+    text = re.sub(r'(\d)\s+(\d)', r'\1\2', text)
+    return text
+
+def get_new_labels(y):
+    y_new = LabelEncoder().fit_transform([''.join(str(l)) for l in y])
+    return y_new
+
+def r2_score(outputs, labels):
+    labels_mean = torch.mean(labels)
+    ss_tot = torch.sum((labels - labels_mean) ** 2)
+    ss_res = torch.sum((labels - outputs) ** 2)
+    r2 = 1 - ss_res / ss_tot
+    return r2
