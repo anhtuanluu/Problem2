@@ -1,11 +1,7 @@
 import torch
+
+from utils import text_cleaner
 print(torch.cuda.is_available())
 
-import py_vncorenlp
-
-# Automatically download VnCoreNLP components from the original repository
-# and save them in some local machine folder
-py_vncorenlp.download_model(save_dir='C:/Users/atuan/Documents/Git/Problem2/vncorenlp')
-
-# Load the word and sentence segmentation component
-rdrsegmenter = py_vncorenlp.VnCoreNLP(annotators=["wseg"], save_dir='C:/Users/atuan/Documents/Git/Problem2/vncorenlp')
+text = "Anh tư vấn rất nhiệt tình và kỹ lưỡng, còn kêu gọi mình cần gì cứ nhắn tin qua Fb hoặc Zalo cho anh, anh sẽ hổ trợ bất cứ thông tin gì mình cần. Nhiệt tình quá xá."
+print(text_cleaner(text.lower()))

@@ -14,9 +14,9 @@ py_vncorenlp.download_model(save_dir=args.rdrsegmenter_path)
 rdrsegmenter = py_vncorenlp.VnCoreNLP(annotators=["wseg"], save_dir=args.rdrsegmenter_path, max_heap_size='-Xmx500m')
 tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model_path)
 
-PUNCT_TO_REMOVE = '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~’‘——'
+PUNCT_TO_REMOVE = '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~’‘——“”'
 STOP_WORDS = set()
-with open("C:/Users/kccshop.vn/Documents/Git/Problem2/data/stopword_dash.txt", "r", encoding="utf8") as f:
+with open("data/stopword_dash.txt", "r", encoding="utf8") as f:
     for i in f.readlines():
         STOP_WORDS.add(i.strip())
 
@@ -43,11 +43,11 @@ FREQWORDS = set(["nên", "và", "có", "mình", "rất", "là", "thì", "cho", "
 RAREWORDS = set([w for (w, wc) in cnt.most_common() if wc < 2])
 
 x_train = x_train.progress_apply(lambda x : remove_freqwords(x, FREQWORDS))
-x_train.to_csv("C:/Users/kccshop.vn/Documents/Git/Problem2/data/output_not.csv")
+x_train.to_csv("data/output_not.csv")
 
 x_train = x_train.progress_apply(lambda x : remove_rarewords(x, RAREWORDS))
 
-x_train.to_csv("C:/Users/kccshop.vn/Documents/Git/Problem2/data/output.csv")
+x_train.to_csv("data/output.csv")
 
 print('Tokenizing:')
 x_train = convert_to_feature(x_train, tokenizer, args.max_sequence_length, args.head)
