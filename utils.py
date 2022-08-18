@@ -325,6 +325,7 @@ def text_cleaner(review):
     review = review.replace(' ni ', ' này ')
     review = review.replace('19 k', '19k')
     review = review.replace('cf', 'coffee')
+    review = review.replace(' h ', ' giờ ')
     review = review.replace('coffe', 'coffee')
     review = review.replace('tiaafn', 'tuần')
     review = review.replace('thíh', 'thích')
@@ -396,6 +397,7 @@ def text_cleaner(review):
     review = review.replace(' cacs ', ' các ')
     review = review.replace(' gogle ', ' google ')
     review = review.replace(' lăms ', ' lắm ')
+    review = review.replace(' chil ', ' chill ')
     review = remove_emoji(review)
     review = remove_emoticons(review)
     # review = remove_long_word(review) // bị sai
