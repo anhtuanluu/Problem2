@@ -2,12 +2,12 @@ import argparse
 
 def args():
     parser = argparse.ArgumentParser(description='OK')
-    parser.add_argument('--train_path', type=str, default='data/data_final_problem2.csv')
-    parser.add_argument('--test_path', type=str, default='data/public-problem2.csv')
-    parser.add_argument('--data_npy', type=str, default='data/data.npy')
-    parser.add_argument('--target_npy', type=str, default='data/target.npy')
+    parser.add_argument('--train_path', type=str, default='C:/Users/kccshop.vn/Documents/Git/Problem2/data/data_final_problem2.csv')
+    parser.add_argument('--test_path', type=str, default='C:/Users/kccshop.vn/Documents/Git/Problem2/data/public-problem2.csv')
+    parser.add_argument('--data_npy', type=str, default='C:/Users/kccshop.vn/Documents/Git/Problem2/data/data.npy')
+    parser.add_argument('--target_npy', type=str, default='C:/Users/kccshop.vn/Documents/Git/Problem2/data/target.npy')
     parser.add_argument('--pretrained_model_path', type=str, default='vinai/phobert-base')
-    parser.add_argument('--rdrsegmenter_path', type=str,  default='vncorenlp/')
+    parser.add_argument('--rdrsegmenter_path', type=str,  default='C:/Users/kccshop.vn/Documents/Git/Problem2/vncorenlp')
     parser.add_argument('--max_sequence_length', type=int, default=256)
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--accumulation_steps', type=int, default=5)
