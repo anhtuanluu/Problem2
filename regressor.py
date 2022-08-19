@@ -53,7 +53,7 @@ for fold, (train_dx, test_dx) in enumerate(splits):
     tq = tqdm(range(args.epochs + 1))
     num_train_optimization_steps = int(args.epochs * len(train_dataset))
     optimizer = AdamW(mymodel.parameters(), lr=args.lr, eps = 1e-8)
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=50, num_training_steps=num_train_optimization_steps)
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_train_optimization_steps)
     for epoch in tq:
 
         val_preds = None
@@ -73,7 +73,8 @@ for fold, (train_dx, test_dx) in enumerate(splits):
             mymodel.zero_grad()
             logits, attentions = mymodel(x_batch.cuda(), attention_mask=(x_batch>1).cuda(), return_dict=False)
             # loss, logits, attentions = mymodel(x_batch.cuda(), attention_mask=(x_batch>1).cuda(),  labels=y_batch.cuda(), return_dict=False)
-            loss = criterion(logits.squeeze(), y_batch.type_as(logits))
+            # loss = criterion(logits.squeeze(), y_batch.type_as(logits))
+            loss = criterion(logits, y_batch.type_as(logits))
             lossf = loss.item()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(mymodel.parameters(), 2.0)
@@ -87,7 +88,8 @@ for fold, (train_dx, test_dx) in enumerate(splits):
         for i,(x_batch, y_batch) in pbar:
             with torch.no_grad():
                 logits, attentions = mymodel(x_batch.cuda(), attention_mask=(x_batch>1).cuda(), return_dict=False)
-            loss = criterion(logits.squeeze(), y_batch.type_as(logits))
+            # loss = criterion(logits.squeeze(), y_batch.type_as(logits))
+            loss = criterion(logits, y_batch.type_as(logits))
             lossf = loss.item()
             avg_eval_loss += lossf / len(valid_loader)
             logits = logits.detach().cpu().numpy()
