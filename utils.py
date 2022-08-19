@@ -450,7 +450,7 @@ def get_new_labels(y):
     y_new = LabelEncoder().fit_transform([''.join(str(l)) for l in y])
     return y_new
 
-def r2_score(outputs, labels):
+def r2_score_tmp(outputs, labels):
     labels_mean = torch.mean(labels)
     ss_tot = torch.sum((labels - labels_mean) ** 2)
     ss_res = torch.sum((labels - outputs) ** 2)
