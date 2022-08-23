@@ -76,13 +76,77 @@ class BertForQNHackathon(BertPreTrainedModel):
         linear_output = self.linear(hidden.view(-1,256*2))        
         return linear_output
 
-if __name__ == '__main__':
-    config = RobertaConfig.from_pretrained(
-            'vinai/phobert-base',
-            output_hidden_states=True,
-            num_labels=1
-            )
-    mymodel = BertForQNHackathon.from_pretrained("vinai/phobert-base", config=config)
-    input_ids = torch.ones((1,5), dtype=torch.int64)
-    outputs = mymodel(input_ids)
-    print(outputs)
+
+class AttentionHead(nn.Module):
+    def __init__(self, h_size, hidden_dim=512):
+        super().__init__()
+        self.W = nn.Linear(h_size, hidden_dim)
+        self.V = nn.Linear(hidden_dim, 1)
+        
+    def forward(self, features):
+        att = torch.tanh(self.W(features))
+        score = self.V(att)
+        attention_weights = torch.softmax(score, dim=1)
+        context_vector = attention_weights * features
+        context_vector = torch.sum(context_vector, dim=1)
+
+        return context_vector
+
+class CLRPModel(nn.Module):
+    def __init__(self,transformer, config):
+        super(CLRPModel,self).__init__()
+        self.h_size = config.hidden_size
+        self.transformer = transformer
+        self.head = AttentionHead(self.h_size*4)
+        self.linear = nn.Linear(self.h_size*2, 1)
+        self.linear_out = nn.Linear(self.h_size*8, config.num_labels)
+
+              
+    def forward(self, input_ids, attention_mask):
+        transformer_out = self.transformer(input_ids, attention_mask)
+       
+        all_hidden_states = torch.stack(transformer_out.hidden_states)
+        cat_over_last_layers = torch.cat(
+            (all_hidden_states[-1], all_hidden_states[-2], all_hidden_states[-3], all_hidden_states[-4]),-1
+        )
+        
+        cls_pooling = cat_over_last_layers[:, 0]   
+        head_logits = self.head(cat_over_last_layers)
+        y_hat = self.linear_out(torch.cat([head_logits, cls_pooling], -1))
+        
+        return y_hat
+
+class LSTM(nn.Module):
+    def __init__(self, vocab_size, embedding_dim, hidden_dim, output_dim, n_layers, 
+                 bidirectional, dropout, pad_idx):
+        
+        super().__init__()
+
+        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx = pad_idx)
+
+        self.encoder = nn.LSTM(embedding_dim, 
+                               hidden_dim, 
+                               num_layers=n_layers,
+                               bidirectional=bidirectional,
+                               dropout=dropout)
+        
+        self.predictor = nn.Linear(hidden_dim*2, output_dim)
+        self.dropout = nn.Dropout(dropout)
+      
+    def forward(self, text):
+        """
+        The forward method is called when data is fed into the model.
+
+        text - [tweet length, batch size]
+        text_lengths - lengths of tweet
+        """
+        embedded = self.dropout(self.embedding(text))    
+
+        # packed_embedded = nn.utils.rnn.pack_padded_sequence(embedded, text_lengths)
+
+        packed_output, (hidden, cell) = self.encoder(embedded)
+
+        output, output_lengths = nn.utils.rnn.pad_packed_sequence(packed_output)
+        hidden = self.dropout(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim = 1))
+
+        return self.predictor(hidden)

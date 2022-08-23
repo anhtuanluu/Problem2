@@ -236,6 +236,7 @@ def seed_everything(SEED):
     torch.manual_seed(SEED)
     torch.cuda.manual_seed(SEED)
     torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
 
 def remove_punctuation(text, PUNCT_TO_REMOVE):
     return text.translate(str.maketrans('', '', PUNCT_TO_REMOVE))
@@ -275,6 +276,21 @@ def add_tail_padding(series, tokenizer, max_sequence_length):
             input_ids = input_ids + [pad_id, ]*(max_sequence_length - len(input_ids))
         outputs[idx,:] = np.array(input_ids)
     return outputs
+
+def add_tail_padding_text(text, tokenizer, max_sequence_length):
+    eos_id = 2
+    pad_id = 1
+    outputs = []
+    # outputs = np.zeros((len(series), max_sequence_length))
+    # for idx, row in enumerate(text): 
+    input_ids = tokenizer.encode(text)
+    if len(input_ids) > max_sequence_length: 
+        input_ids = input_ids[:max_sequence_length] 
+        input_ids[-1] = eos_id
+    else:
+        input_ids = input_ids + [pad_id, ]*(max_sequence_length - len(input_ids))
+    # outputs[idx,:] = np.array(input_ids)
+    return input_ids
 
 def add_head_padding(series, tokenizer, max_sequence_length):
     eos_id = 2
@@ -417,10 +433,10 @@ def text_cleaner(review):
     # review = review.lower()
     # review = re.sub(r'[^\w\s]', '', review)
     review = re.sub("\s\s+" , " ", review)
-    review = re.sub("(\D) k " , "\\1 không ", review)
-    review = re.sub("([0-9]) k " , "\\1 nghìn ", review)
-    review = re.sub("([0-9]) đ " , "\\1 nghìn ", review)
-    review = re.sub("([0-9])k " , "\\1 nghìn ", review)
+    # review = re.sub("(\D) k " , "\\1 không ", review)
+    # review = re.sub("([0-9]) k " , "\\1 nghìn ", review)
+    # review = re.sub("([0-9]) đ " , "\\1 nghìn ", review)
+    # review = re.sub("([0-9])k " , "\\1 nghìn ", review)
     review = review.strip()
     return review
 

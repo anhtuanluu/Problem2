@@ -1,6 +1,12 @@
+import json
 import numpy as np
+import pickle
+import os
+import torch
 import re
+import string
 from collections import OrderedDict
+from sklearn.preprocessing import LabelEncoder
 
 EMOTICONS = {
     u":‑\)":"Happy face or smiley",
@@ -224,6 +230,11 @@ EMOTICONS = {
     u"\(‘A`\)":"Snubbed or Deflated"
 }
 
+def seed_everything(SEED):
+    np.random.seed(SEED)
+    torch.manual_seed(SEED)
+    torch.cuda.manual_seed(SEED)
+    torch.backends.cudnn.deterministic = True
 
 def remove_punctuation(text, PUNCT_TO_REMOVE):
     return text.translate(str.maketrans('', '', PUNCT_TO_REMOVE))
@@ -264,6 +275,21 @@ def add_tail_padding(series, tokenizer, max_sequence_length):
         outputs[idx,:] = np.array(input_ids)
     return outputs
 
+def add_tail_padding_text(text, tokenizer, max_sequence_length):
+    eos_id = 2
+    pad_id = 1
+    outputs = []
+    # outputs = np.zeros((len(series), max_sequence_length))
+    # for idx, row in enumerate(text): 
+    input_ids = tokenizer.encode(text)
+    if len(input_ids) > max_sequence_length: 
+        input_ids = input_ids[:max_sequence_length] 
+        input_ids[-1] = eos_id
+    else:
+        input_ids = input_ids + [pad_id, ]*(max_sequence_length - len(input_ids))
+    # outputs[idx,:] = np.array(input_ids)
+    return input_ids
+
 def add_head_padding(series, tokenizer, max_sequence_length):
     eos_id = 2
     pad_id = 1
@@ -285,7 +311,10 @@ def convert_to_feature(series, tokenizer, max_sequence_length, head = False):
     else:
         outputs = add_head_padding(series, tokenizer, max_sequence_length)
     return outputs
-    
+
+def remove_long_word(text):
+    return re.sub(r'([A-Z])\1+', lambda m: m.group(1).lower(), text, flags=re.IGNORECASE)
+
 def text_cleaner(review):
     review = review.replace('\n', ' ')
     review = review.replace('.', '. ')
@@ -299,7 +328,7 @@ def text_cleaner(review):
     review = review.replace('vs', 'với')
     review = review.replace('phcu5', 'phục')
     review = review.replace('lém', 'lắm')
-    review = review.replace('fb', 'facebook')
+    # review = review.replace('fb', 'facebook')
     review = review.replace('5sao', '5 sao')
     review = review.replace('TP', 'thành phố')
     review = review.replace('tp', 'thành phố')
@@ -310,6 +339,7 @@ def text_cleaner(review):
     review = review.replace(' ni ', ' này ')
     review = review.replace('19 k', '19k')
     review = review.replace('cf', 'coffee')
+    review = review.replace(' h ', ' giờ ')
     review = review.replace('coffe', 'coffee')
     review = review.replace('tiaafn', 'tuần')
     review = review.replace('thíh', 'thích')
@@ -331,7 +361,7 @@ def text_cleaner(review):
     review = review.replace('nèeee', 'nè')
     review = review.replace('hay nan', 'hãy nán')
     review = review.replace('vnđ', 'việt nam đồng')
-    review = review.replace('oto', 'ô tô')
+    review = review.replace(' oto ', 'ô tô')
     review = review.replace('trung tân', 'trung tâm')
     review = review.replace('bsang', 'buổi sáng')
     review = review.replace('dim sum', 'dimsum')
@@ -379,17 +409,30 @@ def text_cleaner(review):
     review = review.replace('trog', 'trong')
     review = review.replace(' thíc ', ' thích ')
     review = review.replace(' cacs ', ' các ')
+    review = review.replace(' gogle ', ' google ')
+    review = review.replace(' lăms ', ' lắm ')
+    review = review.replace(' chil ', ' chill ')
+    review = review.replace('thànhhh', 'thành')
+    review = review.replace(' fb ', ' facebook ')
+    review = review.replace(' ko ', ' không ')
+    review = review.replace(' coffeeee ', ' coffee ')
+    review = review.replace(' coffeee ', ' coffee ')
+    review = review.replace(' coffeeeee ', ' coffee ')
+    review = review.replace(' 40ng ', ' 40 người ')
+    review = review.replace(' j ', ' gì ')
+    review = review.replace(' tv ', ' tivi ')
+    review = review.replace(' cg ', ' cũng ')
+    review = review.replace(' bik ', ' biết ')
+    review = review.replace(' đg ', ' đường ')
     review = remove_emoji(review)
     review = remove_emoticons(review)
+    # review = remove_long_word(review) // bị sai
     # review = '<s> '+ review +' </s>'
     # review = review.lower()
-    # review = review.replace('.', '')
     # review = re.sub(r'[^\w\s]', '', review)
     review = re.sub("\s\s+" , " ", review)
     review = re.sub("(\D) k " , "\\1 không ", review)
-    # review = re.sub("(\D) k." , "\\1 không ", review)
     review = re.sub("([0-9]) k " , "\\1 nghìn ", review)
-    # review = re.sub("([0-9]) k." , "\\1 nghìn ", review)
     review = re.sub("([0-9]) đ " , "\\1 nghìn ", review)
     review = re.sub("([0-9])k " , "\\1 nghìn ", review)
     review = review.strip()
@@ -413,3 +456,17 @@ def remove_freqwords(text, FREQWORDS):
 def remove_rarewords(text, RAREWORDS):
     return " ".join([word for word in str(text).split() if word not in RAREWORDS])
 
+def remove_space_between_numbers(text):
+    text = re.sub(r'(\d)\s+(\d)', r'\1\2', text)
+    return text
+
+def get_new_labels(y):
+    y_new = LabelEncoder().fit_transform([''.join(str(l)) for l in y])
+    return y_new
+
+def r2_score_tmp(outputs, labels):
+    labels_mean = torch.mean(labels)
+    ss_tot = torch.sum((labels - labels_mean) ** 2)
+    ss_res = torch.sum((labels - outputs) ** 2)
+    r2 = 1 - ss_res / ss_tot
+    return r2

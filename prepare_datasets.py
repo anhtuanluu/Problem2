@@ -16,7 +16,7 @@ tokenizer = AutoTokenizer.from_pretrained(args.pretrained_model_path)
 
 PUNCT_TO_REMOVE = '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~’‘——“”'
 STOP_WORDS = set()
-with open("C:/Users/kccshop.vn/Documents/Git/Problem2/data/stopword_dash.txt", "r", encoding="utf8") as f:
+with open("C:/Users/atuan/Documents/Git/Problem2/data/stopword_dash.txt", "r", encoding="utf8") as f:
     for i in f.readlines():
         STOP_WORDS.add(i.strip())
 
@@ -39,15 +39,22 @@ for text in x_train.values:
     for word in text.split():
         cnt[word] += 1
 print(len(cnt))
+
 FREQWORDS = set(["nên", "và", "có", "mình", "rất", "là", "thì", "cho", "cũng", "với"])
 RAREWORDS = set([w for (w, wc) in cnt.most_common() if wc < 2])
-print(cnt.most_common(20))
-x_train = x_train.progress_apply(lambda x : remove_freqwords(x, FREQWORDS))
-x_train.to_csv("C:/Users/kccshop.vn/Documents/Git/Problem2/data/output_not.csv")
+with open(r'C:/Users/atuan/Documents/Git/Problem2/data/freq.txt', 'w', encoding="utf8") as fp:
+    for item in FREQWORDS:
+        fp.write("%s\n" % item)
+with open(r'C:/Users/atuan/Documents/Git/Problem2/data/rare.txt', 'w', encoding="utf8") as fp1:
+    for item in RAREWORDS:
+        fp1.write("%s\n" % item)
+# print(cnt.most_common(20))
+# x_train = x_train.progress_apply(lambda x : remove_freqwords(x, FREQWORDS))
+# x_train.to_csv("C:/Users/atuan/Documents/Git/Problem2/data/output_not.csv")
 
-x_train = x_train.progress_apply(lambda x : remove_rarewords(x, RAREWORDS))
+# x_train = x_train.progress_apply(lambda x : remove_rarewords(x, RAREWORDS))
 
-x_train.to_csv("C:/Users/kccshop.vn/Documents/Git/Problem2/data/output.csv")
+x_train.to_csv("C:/Users/atuan/Documents/Git/Problem2/data/output.csv")
 
 print('Tokenizing:')
 x_train = convert_to_feature(x_train, tokenizer, args.max_sequence_length, args.head)

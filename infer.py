@@ -4,49 +4,64 @@ tqdm.pandas()
 from torch import nn
 import numpy as np
 import os
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score,roc_curve, roc_auc_score, confusion_matrix
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score, f1_score, roc_auc_score, confusion_matrix, r2_score
 from transformers import *
 import torch
-import torch.utils.data
+from torch.utils.data import DataLoader, TensorDataset
+import torch.nn.functional as F
 from utils import *
 from config import args
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-args = args()
+from sklearn.metrics import mean_absolute_error, median_absolute_error, mean_squared_error, mean_absolute_percentage_error, r2_score
+from sklearn.preprocessing import StandardScaler
+import py_vncorenlp
 
-config = RobertaConfig.from_pretrained(
-            args.pretrained_model_path,
-            output_hidden_states=True,
-            num_labels=1
+text = "Bánh rất nhiều tôm to, tôm giòn nằm chễm chệ trên vỏ bánh mềm thơm ngon. Món ăn thuộc loại rolling in the deep, nghĩa là cuốn với rau, dưa chuột, giá, vỏ bánh mềm. Ngoài ra, đặc biệt không thể thiếu của món ăn là nước chấm chua cay rất Bình Định, vừa miệng đến khó tả. Đặc biệt, quán có sữa ngô tuyệt đỉnh, kết hợp Combo với bánh xèo cuốn này tạo thành một cặp trời sinh. Ai không thích tôm nhảy, có thể đổi sang bò hoặc mực cũng ngon không kém."
+# text = "bánh nhiều tôm to tôm giòn nằm chễm_chệ trên vỏ bánh mềm thơm ngon món ăn thuộc loại rolling in the deep nghĩa_là cuốn rau dưa_chuột giá vỏ bánh mềm ngoài_ra đặc_biệt không_thể thiếu của món ăn nước_chấm chua_cay bình_định vừa_miệng đến khó tả đặc_biệt quán sữa ngô tuyệt_đỉnh kết_hợp combo bánh_xèo cuốn này tạo thành một cặp trời sinh ai không thích tôm nhảy có_thể đổi sang bò hoặc mực ngon không kém"
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# seed_everything(42)
+args = args()
+PUNCT_TO_REMOVE = '!"#$%&\'()*+,-./:;<=>?@[\\]^`{|}~’‘——“”'
+FREQWORDS = set(line.strip() for line in open('freq.txt', 'r', encoding='utf-8'))
+RAREWORDS = set(line.strip() for line in open('rare.txt', 'r', encoding='utf-8'))
+
+rdrsegmenter = py_vncorenlp.VnCoreNLP(annotators=["wseg"], save_dir=args.rdrsegmenter_path, max_heap_size='-Xmx500m')
+tokenizer = AutoTokenizer.from_pretrained("C:/Users/atuan/Documents/Git/Problem2/models")
+config = AutoConfig.from_pretrained(
+            "C:/Users/atuan/Documents/Git/Problem2/models",
+            # output_hidden_states=True,
+            output_attentions=True,
+            num_labels=6
             )
 
-mymodel = BertForQNHackathon(config=config)
-checkpoint = torch.load(os.path.join(args.checkpoint, f"model.bin"), map_location=device)
-load_state_dict(mymodel, checkpoint)
-
-if torch.cuda.is_available():
-    mymodel.cuda()
-    if torch.cuda.device_count():
-        mymodel = nn.DataParallel(mymodel)
+mymodel = AutoModelForSequenceClassification.from_pretrained("C:/Users/atuan/Documents/Git/Problem2/models", config=config)
+mymodel.to("cpu")
 mymodel.eval()
+
 data_npy = np.load(args.data_npy)
 target_npy = np.load(args.target_npy)
-x_train, x_test, y_train, y_test = data_npy[:2965], target_npy[:2965], data_npy[:10], target_npy[:10]
+# print(text)
+text = text_cleaner(text)
+text = ' '.join(rdrsegmenter.word_segment(text))
+text = remove_punctuation(text, PUNCT_TO_REMOVE)
+text =  text.lower()
+text = text_cleaner(text)
+text = re.sub("\s\s+" , " ", text).strip()
+text = remove_freqwords(text, FREQWORDS)
+text = remove_rarewords(text, RAREWORDS)
 
-x_test = x_test[:, 0]
-y_test = y_test[:, 0]
+# print(data_npy[0].astype(int))
 
-valid_dataset = torch.utils.data.TensorDataset(torch.tensor(y_train, dtype=torch.long), torch.tensor(y_test, dtype=torch.long))
-valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
-val_preds = None
-pbar = tqdm(enumerate(valid_loader),total=len(valid_loader),leave=False)
-for i,(x_batch, y_batch) in pbar:
-    y_pred = mymodel(x_batch.to(device), attention_mask=(x_batch > 0).to(device))
-    y_pred = y_pred.squeeze().detach().cpu().numpy()
-    val_preds = np.atleast_1d(y_pred) if val_preds is None else np.concatenate([val_preds, np.atleast_1d(y_pred)])
-val_preds = sigmoid(val_preds)
-print(val_preds)
-fpr, tpr, thresholds = roc_curve(y_test, val_preds, pos_label = 1)
-for i in thresholds:
-    print(f1_score(y_test, val_preds > i))
-
-print(f1_score(y_test, val_preds > 0.5))
+input_id = add_tail_padding_text(text, tokenizer, args.max_sequence_length)
+input_id = torch.tensor(input_id, dtype=torch.long).unsqueeze(0)
+logits = []
+for i in range(5):
+    checkpoint = torch.load(f"C:/Users/atuan/Documents/Git/Problem2/submit2/model_{i}.bin", map_location=torch.device('cpu'))
+    load_state_dict(mymodel, checkpoint)
+    logit, attentions = mymodel(input_id, attention_mask=(input_id>1), return_dict = False)
+    logit = logit.view(-1).detach().cpu().numpy()
+    print(logit)
+    logits.append(logit)
+logits = np.mean(logits,axis=0)
+output = np.round(np.clip(logits, 0, 5))
+print(output)

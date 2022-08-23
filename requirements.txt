@@ -5,3 +5,4 @@ py_vncorenlp==0.1.3
 xgboost==1.6.1
 sacremoses==0.0.53
 flask==2.1.3
+pandas==1.16.0
